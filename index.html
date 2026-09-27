@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>个人简历</title>
+  <!-- 引入 PDF.js 核心库 -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #525659;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #loading {
+      color: #ffffff;
+      font-size: 16px;
+      margin-top: 40px;
+    }
+    canvas {
+      display: block;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      max-width: 96%;
+      height: auto !important;
+      background-color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">简历加载中...</div>
+  <div id="pdf-container"></div>
+
+  <script>
+    // 指定 PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+    // 你的简历 PDF 相对路径
+    const url = 'resume.pdf';
+
+    const container = document.getElementById('pdf-container');
+    const loading = document.getElementById('loading');
+
+    pdfjsLib.getDocument(url).promise.then(async function(pdf) {
+      loading.style.display = 'none';
+
+      // 逐页连续渲染（多页支持平滑向下滚动）
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        
+        // 计算高分辨率以适配手机视网膜屏幕，保证文字清晰
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        container.appendChild(canvas);
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+      }
+    }).catch(function(error) {
+      loading.innerText = '加载失败，请检查网络或点击直接下载：';
+      const link = document.createElement('a');
+      link.href = 'resume.pdf';
+      link.innerText = '点击查看 PDF 原件';
+      link.style.color = '#4da3ff';
+      link.style.display = 'block';
+      link.style.marginTop = '10px';
+      loading.appendChild(link);
+    });
+  </script>
+</body>
+</html>
